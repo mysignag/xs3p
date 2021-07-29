@@ -820,6 +820,10 @@
          <xsl:with-param name="component" select="."/>
       </xsl:call-template>
 
+      <xsl:call-template name="SampleAttrHelps">
+         <xsl:with-param name="component" select="."/>
+      </xsl:call-template>
+
       <!-- Schema Component Representation table -->
       <xsl:call-template name="SchemaComponentTable">
          <xsl:with-param name="component" select="."/>
@@ -3396,7 +3400,7 @@ nav {
      -->
    <xsl:template match="text()" mode="hiddendoc"/>
 
-   <xsl:template match="xsd:element | xsd:attribute | xsd:simpleType" mode="hiddendoc">
+   <xsl:template match="xsd:element | xsd:attribute | xsd:simpleType | xsd:enumeration " mode="hiddendoc">
       <xsl:if test="./xsd:annotation/xsd:documentation">
          <xsl:variable name="documentation">
             <xsl:for-each select="./xsd:annotation/xsd:documentation">
@@ -3436,7 +3440,7 @@ nav {
       </xsl:if>
    </xsl:template>
    
-   <xsl:template match="xsd:element | xsd:attribute | xsd:simpleType" mode="hiddendoc_modal">
+   <xsl:template match="xsd:element | xsd:attribute | xsd:simpleType | xsd:enumeration" mode="hiddendoc_modal">
       <xsl:if test="./xsd:annotation/xsd:documentation">
          <xsl:variable name="documentation">
             <xsl:for-each select="./xsd:annotation/xsd:documentation">
@@ -3713,6 +3717,11 @@ nav {
             <xsl:with-param name="simpleRestrict" select="$restriction"/>
          </xsl:call-template>
       </xsl:variable>
+      <xsl:variable name="enumerationHelp">
+         <xsl:call-template name="PrintEnumFacetsHelp">
+            <xsl:with-param name="simpleRestrict" select="$restriction"/>
+         </xsl:call-template>
+      </xsl:variable>
       <xsl:variable name="pattern">
          <xsl:call-template name="PrintPatternFacet">
             <xsl:with-param name="simpleRestrict" select="$restriction"/>
@@ -3750,6 +3759,11 @@ nav {
             <xsl:if test="$enumeration!=''">
                <li>
                   <xsl:copy-of select="$enumeration"/>
+               </li>
+            </xsl:if>
+            <xsl:if test="$enumerationHelp!=''">
+               <li>
+                  <xsl:copy-of select="$enumerationHelp"/>
                </li>
             </xsl:if>
             <xsl:if test="$pattern!=''">
@@ -3808,7 +3822,7 @@ nav {
             </xsl:call-template>
          </xsl:variable>
          <div class="bs-callout bs-callout-info">
-            <h4>XML Instance Representation 
+            <h4>XML Instance Representation
                <span class="xs3p-panel-help">
                   <button type="button" class="btn btn-doc" data-container="body" data-toggle="popover" data-placement="right" data-html="true" data-content="{$HELP_INSTANCE}">
                   <span class="glyphicon glyphicon-question-sign"><xsl:text> </xsl:text></span>
@@ -3834,6 +3848,53 @@ nav {
             </xsl:with-param>
             <xsl:with-param name="isOpened">true</xsl:with-param>
          </xsl:call-template> -->
+      </xsl:if>
+   </xsl:template>
+
+   <!-- ******** XML Instance Representation table ******** -->
+
+   <!--
+     Prints out the XML Instance Representation table for a top-level
+     schema component.
+     Param(s):
+            component (Node) required
+              Top-level schema component
+     -->
+   <xsl:template name="SampleAttrHelps">
+      <xsl:param name="component"/>
+
+      <!-- Not applicable for simple type definitions and notation
+      declarations -->
+      <xsl:if test="local-name($component)!='simpleType' and local-name($component)!='notation'">
+         <xsl:variable name="componentID">
+            <xsl:call-template name="GetComponentID">
+               <xsl:with-param name="component" select="$component"/>
+            </xsl:call-template>
+         </xsl:variable>
+         <div class="bs-callout bs-callout-info">
+            <h4>Help
+               <span class="xs3p-panel-help">
+                  <button type="button" class="btn btn-doc" data-container="body" data-toggle="popover" data-placement="right" data-html="true" data-content="{$HELP_INSTANCE}">
+                     <span class="glyphicon glyphicon-question-sign"><xsl:text> </xsl:text></span>
+                  </button>
+               </span>
+            </h4>
+            <xsl:apply-templates select="$component" mode="sample"/>
+         </div>
+
+
+         <!--
+        <xsl:call-template name="CollapseableBox">
+           <xsl:with-param name="id" select="$componentID"/>
+           <xsl:with-param name="help" select="$HELP_INSTANCE"/>
+           <xsl:with-param name="anchor">instance-table</xsl:with-param>
+           <xsl:with-param name="styleClass">sample</xsl:with-param>
+           <xsl:with-param name="caption">XML Instance Representation</xsl:with-param>
+           <xsl:with-param name="contents">
+              <xsl:apply-templates select="$component" mode="sample"/>
+           </xsl:with-param>
+           <xsl:with-param name="isOpened">true</xsl:with-param>
+        </xsl:call-template> -->
       </xsl:if>
    </xsl:template>
 
@@ -4805,7 +4866,7 @@ nav {
       <xsl:param name="schemaLoc">this</xsl:param>
 
       <span class="constraint">
-         <xsl:call-template name="PrintSampleSimpleRestriction">
+         <xsl:call-template name="PrintSampleSimpleRestriction" >
             <xsl:with-param name="restriction" select="./xsd:restriction"/>
             <xsl:with-param name="schemaLoc" select="$schemaLoc"/>
          </xsl:call-template>
@@ -6323,10 +6384,17 @@ nav {
          </xsl:call-template>
       </xsl:variable>
 
-      <!-- Print out facets -->
+       Print out facets
       <xsl:if test="$restriction/xsd:enumeration">
          <xsl:text> (</xsl:text>
          <xsl:call-template name="PrintEnumFacets">
+            <xsl:with-param name="simpleRestrict" select="$restriction"/>
+         </xsl:call-template>
+         <xsl:text>)</xsl:text>
+      </xsl:if>
+      <xsl:if test="$restriction/xsd:enumeration/xsd:annotation/xsd:documentation">
+         <xsl:text> (</xsl:text>
+         <xsl:call-template name="PrintEnumFacetsHelp">
             <xsl:with-param name="simpleRestrict" select="$restriction"/>
          </xsl:call-template>
          <xsl:text>)</xsl:text>
@@ -6389,7 +6457,7 @@ nav {
       
       
       <div class="bs-callout bs-callout-info">
-            <h4>Schema Component Representation 
+            <h4>Schema Component Representation
                <span class="xs3p-panel-help">
                   <button type="button" class="btn btn-doc" data-container="body" data-toggle="popover" data-placement="left" data-html="true" data-content="{$HELP_REPRESENTATION}">
                   <span class="glyphicon glyphicon-question-sign"><xsl:text> </xsl:text></span>
@@ -9156,6 +9224,26 @@ was not specified in the links file, <xsl:value-of select="$linksFile"/>.
             simpleRestrict (Node) required
               'restriction' element
      -->
+   <xsl:template name="PrintEnumFacetsHelp">
+      <xsl:param name="simpleRestrict"/>
+
+      <xsl:if test="$simpleRestrict/xsd:enumeration/xsd:annotation/xsd:documentation">
+         <xsl:for-each select="$simpleRestrict/xsd:enumeration">
+            <xsl:if test="xsd:annotation/xsd:documentation">
+               <h3> <xsl:value-of select="@value"/> </h3>
+               <pre><xsl:value-of select="xsd:annotation/xsd:documentation"/> </pre>
+            </xsl:if>
+         </xsl:for-each>
+
+      </xsl:if>
+   </xsl:template>
+   <!--
+     Print out the enumeration list for derivations by
+     restriction on simple content.
+     Param(s):
+            simpleRestrict (Node) required
+              'restriction' element
+     -->
    <xsl:template name="PrintEnumFacets">
       <xsl:param name="simpleRestrict"/>
 
@@ -9175,6 +9263,7 @@ was not specified in the links file, <xsl:value-of select="$linksFile"/>.
          <xsl:text>}</xsl:text>
       </xsl:if>
    </xsl:template>
+
 
    <!--
      Print out the length property for derivations by
